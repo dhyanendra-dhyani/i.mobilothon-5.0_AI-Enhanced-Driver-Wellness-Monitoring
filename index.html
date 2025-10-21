@@ -3,121 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Fatigue & Distraction Monitor</title>
+    <title>DriveSense - AI Driver Wellness Monitor</title>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- MediaPipe Face Mesh -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    
+    <!-- Leaflet for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚗 Driver Fatigue & Distraction Monitor</h1>
-            <p>Real-time drowsiness and distraction detection system</p>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🚗</span>
+                <h1>DriveSense</h1>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator" id="systemStatus">
+                    <div class="status-dot"></div>
+                    <span>Ready</span>
+                </div>
+            </div>
         </header>
 
+        <!-- Main Content -->
         <div class="main-content">
-            <!-- Video Section -->
-            <div class="video-section">
-                <div class="video-container">
-                    <video id="videoInput" autoplay playsinline></video>
-                    <canvas id="canvasOutput"></canvas>
+            <!-- Left Panel: Video & Map -->
+            <div class="left-panel">
+                <!-- Video Feed -->
+                <div class="video-section">
+                    <div class="video-header">
+                        <h3>📹 Driver Monitor</h3>
+                        <div class="fatigue-score" id="fatigueScore">
+                            <span class="score-label">Fatigue</span>
+                            <span class="score-value" id="fatigueValue">0%</span>
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <video id="videoInput" autoplay playsinline></video>
+                        <canvas id="canvasOutput"></canvas>
+                        <div class="video-overlay" id="videoOverlay">
+                            <div class="detection-badge" id="detectionBadge">
+                                <span class="badge-icon">👁️</span>
+                                <span class="badge-text">Detecting...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="video-controls">
+                        <button id="startBtn" class="btn btn-primary">
+                            <span>▶️ Start Monitoring</span>
+                        </button>
+                        <button id="stopBtn" class="btn btn-danger" disabled>
+                            <span>⏹️ Stop</span>
+                        </button>
+                        <button id="selectAudioBtn" class="btn btn-secondary">
+                            <span>🔊 Audio Output</span>
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="controls">
-                    <button id="startBtn" class="btn btn-primary">
-                        <span>▶️ Start Monitoring</span>
-                    </button>
-                    <button id="stopBtn" class="btn btn-danger" disabled>
-                        <span>⏹️ Stop Monitoring</span>
-                    </button>
+
+                <!-- Map Section -->
+                <div class="map-section">
+                    <div class="map-header">
+                        <h3>🗺️ Nearby Rest Stops</h3>
+                        <button id="findRestStops" class="btn btn-small">Find Stops</button>
+                    </div>
+                    <div id="map" class="map-container"></div>
+                    <div class="rest-stop-list" id="restStopList">
+                        <div class="empty-state">Enable location to find nearby rest stops</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Stats Section -->
-            <div class="stats-section">
-                <div class="status-card" id="statusCard">
-                    <h2>System Status</h2>
-                    <div class="status-indicator">
-                        <div class="status-light" id="statusLight"></div>
-                        <span id="statusText">System Ready</span>
-                    </div>
-                </div>
-
+            <!-- Right Panel: Metrics & Interventions -->
+            <div class="right-panel">
+                <!-- Detection Metrics -->
                 <div class="metrics-card">
                     <h3>📊 Detection Metrics</h3>
-                    <div class="metric">
-                        <label>Eye Aspect Ratio (EAR):</label>
-                        <span id="earValue">0.00</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="earProgress"></div>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-icon">👁️</div>
+                            <div class="metric-content">
+                                <label>Eye Status (EAR)</label>
+                                <div class="metric-value-container">
+                                    <span class="metric-value" id="earValue">0.00</span>
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-fill" id="earProgress"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="metric">
-                        <label>Mouth Aspect Ratio (MAR):</label>
-                        <span id="marValue">0.00</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="marProgress"></div>
+
+                        <div class="metric-item">
+                            <div class="metric-icon">😮</div>
+                            <div class="metric-content">
+                                <label>Yawn (MAR)</label>
+                                <div class="metric-value-container">
+                                    <span class="metric-value" id="marValue">0.00</span>
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-fill" id="marProgress"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="metric">
-                        <label>Drowsy Time:</label>
-                        <span id="drowsyTime">0.0s</span>
-                    </div>
-                    <div class="metric">
-                        <label>Head Position:</label>
-                        <span id="headPose">Centered</span>
+
+                        <div class="metric-item">
+                            <div class="metric-icon">🎯</div>
+                            <div class="metric-content">
+                                <label>Head Position</label>
+                                <span class="metric-value" id="headPose">Centered</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-item">
+                            <div class="metric-icon">⏱️</div>
+                            <div class="metric-content">
+                                <label>Drowsy Time</label>
+                                <span class="metric-value" id="drowsyTime">0.0s</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="alert-card" id="alertCard">
-                    <h3>⚠️ Alert Messages</h3>
-                    <div id="alertMessages" class="alert-messages">
-                        <p class="no-alerts">No alerts</p>
+                <!-- Motion Sensors -->
+                <div class="motion-card">
+                    <h3>🚗 Motion Analysis</h3>
+                    <div class="sensor-status">
+                        <span class="sensor-badge" id="sensorBadge">Checking sensors...</span>
+                    </div>
+                    <div class="motion-grid">
+                        <div class="motion-metric">
+                            <label>Acceleration</label>
+                            <div class="motion-values">
+                                <span>X: <strong id="accelX">0.0</strong></span>
+                                <span>Y: <strong id="accelY">0.0</strong></span>
+                                <span>Z: <strong id="accelZ">0.0</strong></span>
+                            </div>
+                        </div>
+                        <div class="motion-metric">
+                            <label>Total Force</label>
+                            <span class="total-accel" id="totalAccel">0.0 m/s²</span>
+                        </div>
+                    </div>
+                    <div class="driving-events" id="drivingEvents">
+                        <label>Recent Events:</label>
+                        <div class="events-list" id="eventsList">
+                            <div class="no-events">No events</div>
+                        </div>
                     </div>
                 </div>
 
-<div class="settings-card">
-    <h3>⚙️ Settings</h3>
-    
-    <!-- NEW: Audio Output Device Selection -->
-    <div class="setting-item">
-        <button id="selectAudioBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 15px;">
-            🔊 Select Audio Output Device
-        </button>
-        <div id="selectedDevice" style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
-            Output: Default Device
+                <!-- Active Interventions -->
+                <div class="interventions-card">
+                    <h3>🎵 Active Interventions</h3>
+                    
+                    <!-- Music Control -->
+                    <div class="intervention-section">
+                        <div class="intervention-header">
+                            <span class="intervention-icon">🎵</span>
+                            <label>Smart Music Control</label>
+                        </div>
+                        <div class="music-player" id="musicPlayer">
+                            <div class="music-status" id="musicStatus">
+                                <span class="music-icon">🎵</span>
+                                <span class="music-text">No music playing</span>
+                            </div>
+                            <div class="music-controls">
+                                <button class="btn-mini" id="playMusicBtn">▶️ Play</button>
+                                <button class="btn-mini" id="pauseMusicBtn" disabled>⏸️ Pause</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Psychological Messages -->
+                    <div class="intervention-section">
+                        <div class="intervention-header">
+                            <span class="intervention-icon">💬</span>
+                            <label>Psychological Support</label>
+                        </div>
+                        <div class="message-player" id="messagePlayer">
+                            <div class="message-display" id="currentMessage">
+                                Ready to assist when needed
+                            </div>
+                            <button class="btn-mini" id="testMessageBtn">🔊 Test Message</button>
+                        </div>
+                    </div>
+
+                    <!-- Lighting Control -->
+                    <div class="intervention-section">
+                        <div class="intervention-header">
+                            <span class="intervention-icon">💡</span>
+                            <label>Ambient Lighting</label>
+                        </div>
+                        <div class="lighting-display" id="lightingDisplay">
+                            <div class="light-indicator" id="lightIndicator">
+                                <div class="light-color" id="lightColor"></div>
+                                <span id="lightStatus">Normal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div class="alerts-card">
+                    <h3>⚠️ Alert Log</h3>
+                    <div class="alerts-list" id="alertsList">
+                        <div class="no-alerts">System ready - No alerts</div>
+                    </div>
+                </div>
+
+                <!-- Trip Stats -->
+                <div class="trip-card">
+                    <h3>📈 Trip Statistics</h3>
+                    <div class="trip-stats">
+                        <div class="stat-item">
+                            <label>Drive Time</label>
+                            <span id="driveTime">00:00:00</span>
+                        </div>
+                        <div class="stat-item">
+                            <label>Safety Score</label>
+                            <span id="safetyScore" class="score-highlight">100</span>
+                        </div>
+                        <div class="stat-item">
+                            <label>Interventions</label>
+                            <span id="interventionCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="settings-card collapsed" id="settingsCard">
+                    <div class="settings-header" id="settingsToggle">
+                        <h3>⚙️ Settings</h3>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="settings-content" id="settingsContent">
+                        <div class="setting-item">
+                            <label>EAR Threshold: <span id="earThresholdValue">0.20</span></label>
+                            <input type="range" id="earThreshold" min="0.15" max="0.30" step="0.01" value="0.20">
+                        </div>
+                        <div class="setting-item">
+                            <label>MAR Threshold: <span id="marThresholdValue">0.65</span></label>
+                            <input type="range" id="marThreshold" min="0.5" max="0.8" step="0.05" value="0.65">
+                        </div>
+                        <div class="setting-item">
+                            <label>Alert Wait Time: <span id="waitTimeValue">2.0</span>s</label>
+                            <input type="range" id="waitTime" min="0.5" max="5.0" step="0.5" value="2.0">
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="soundAlert" checked>
+                                Enable Sound Alerts
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="autoMusic" checked>
+                                Auto Music Adjustment
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="psychMessages" checked>
+                                Psychological Messages
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    
-    <div class="setting-item">
-        <label for="earThreshold">EAR Threshold:</label>
-        <input type="range" id="earThreshold" min="0.15" max="0.30" step="0.01" value="0.20">
-        <span id="earThresholdValue">0.20</span>
-    </div>
-    <div class="setting-item">
-        <label for="marThreshold">MAR Threshold (Yawn):</label>
-        <input type="range" id="marThreshold" min="0.5" max="0.8" step="0.05" value="0.65">
-        <span id="marThresholdValue">0.65</span>
-    </div>
-    <div class="setting-item">
-        <label for="waitTime">Alert Wait Time (s):</label>
-        <input type="range" id="waitTime" min="0.5" max="5.0" step="0.5" value="2.0">
-        <span id="waitTimeValue">2.0</span>
-    </div>
-    <div class="setting-item">
-        <label>
-            <input type="checkbox" id="soundAlert" checked>
-            Enable Sound Alerts
-        </label>
-    </div>
-</div>
 
-
-        <footer>
-            <p>💡 Keep your eyes on the road and stay alert while driving!</p>
-        </footer>
-    </div>
+    <!-- Audio Elements -->
+    <audio id="alertAudio" preload="auto"></audio>
+    <audio id="musicAudio" loop preload="auto">
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="script.js"></script>
 </body>
