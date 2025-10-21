@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Fatigue & Distraction Monitor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Driver Fatigue & Distraction Monitor</h1>
+            <p>Real-time drowsiness and distraction detection system</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Video Section -->
+            <div class="video-section">
+                <div class="video-container">
+                    <video id="videoInput" autoplay playsinline></video>
+                    <canvas id="canvasOutput"></canvas>
+                </div>
+                
+                <div class="controls">
+                    <button id="startBtn" class="btn btn-primary">
+                        <span>▶️ Start Monitoring</span>
+                    </button>
+                    <button id="stopBtn" class="btn btn-danger" disabled>
+                        <span>⏹️ Stop Monitoring</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-section">
+                <div class="status-card" id="statusCard">
+                    <h2>System Status</h2>
+                    <div class="status-indicator">
+                        <div class="status-light" id="statusLight"></div>
+                        <span id="statusText">System Ready</span>
+                    </div>
+                </div>
+
+                <div class="metrics-card">
+                    <h3>📊 Detection Metrics</h3>
+                    <div class="metric">
+                        <label>Eye Aspect Ratio (EAR):</label>
+                        <span id="earValue">0.00</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="earProgress"></div>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <label>Mouth Aspect Ratio (MAR):</label>
+                        <span id="marValue">0.00</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="marProgress"></div>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <label>Drowsy Time:</label>
+                        <span id="drowsyTime">0.0s</span>
+                    </div>
+                    <div class="metric">
+                        <label>Head Position:</label>
+                        <span id="headPose">Centered</span>
+                    </div>
+                </div>
+
+                <div class="alert-card" id="alertCard">
+                    <h3>⚠️ Alert Messages</h3>
+                    <div id="alertMessages" class="alert-messages">
+                        <p class="no-alerts">No alerts</p>
+                    </div>
+                </div>
+
+<div class="settings-card">
+    <h3>⚙️ Settings</h3>
+    
+    <!-- NEW: Audio Output Device Selection -->
+    <div class="setting-item">
+        <button id="selectAudioBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 15px;">
+            🔊 Select Audio Output Device
+        </button>
+        <div id="selectedDevice" style="font-size: 0.9em; color: #666; margin-bottom: 10px;">
+            Output: Default Device
+        </div>
+    </div>
+    
+    <div class="setting-item">
+        <label for="earThreshold">EAR Threshold:</label>
+        <input type="range" id="earThreshold" min="0.15" max="0.30" step="0.01" value="0.20">
+        <span id="earThresholdValue">0.20</span>
+    </div>
+    <div class="setting-item">
+        <label for="marThreshold">MAR Threshold (Yawn):</label>
+        <input type="range" id="marThreshold" min="0.5" max="0.8" step="0.05" value="0.65">
+        <span id="marThresholdValue">0.65</span>
+    </div>
+    <div class="setting-item">
+        <label for="waitTime">Alert Wait Time (s):</label>
+        <input type="range" id="waitTime" min="0.5" max="5.0" step="0.5" value="2.0">
+        <span id="waitTimeValue">2.0</span>
+    </div>
+    <div class="setting-item">
+        <label>
+            <input type="checkbox" id="soundAlert" checked>
+            Enable Sound Alerts
+        </label>
+    </div>
+</div>
+
+
+        <footer>
+            <p>💡 Keep your eyes on the road and stay alert while driving!</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
